@@ -14,23 +14,36 @@ namespace AssetStudio
         public List<SerializedFile> assetsFileList = new List<SerializedFile>();
         private HashSet<ClassIDType> filteredAssetTypesList = new HashSet<ClassIDType>();
 
-        internal Dictionary<string, int> assetsFileIndexCache = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        internal Dictionary<string, BinaryReader> resourceFileReaders = new Dictionary<string, BinaryReader>(StringComparer.OrdinalIgnoreCase);
+        internal Dictionary<string, int> assetsFileIndexCache = new Dictionary<string, int>(
+            StringComparer.OrdinalIgnoreCase
+        );
+        internal Dictionary<string, BinaryReader> resourceFileReaders = new Dictionary<
+            string,
+            BinaryReader
+        >(StringComparer.OrdinalIgnoreCase);
 
         private List<string> importFiles = new List<string>();
-        private HashSet<string> importFilesHash = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private HashSet<string> noexistFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private HashSet<string> assetsFileListHash = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string> importFilesHash = new HashSet<string>(
+            StringComparer.OrdinalIgnoreCase
+        );
+        private HashSet<string> noexistFiles = new HashSet<string>(
+            StringComparer.OrdinalIgnoreCase
+        );
+        private HashSet<string> assetsFileListHash = new HashSet<string>(
+            StringComparer.OrdinalIgnoreCase
+        );
 
         public void SetAssetFilter(params ClassIDType[] classIDTypes)
         {
             if (filteredAssetTypesList.Count == 0)
             {
-                filteredAssetTypesList.UnionWith(new HashSet<ClassIDType>
-                {
-                    ClassIDType.AssetBundle,
-                    ClassIDType.ResourceManager,
-                });
+                filteredAssetTypesList.UnionWith(
+                    new HashSet<ClassIDType>
+                    {
+                        ClassIDType.AssetBundle,
+                        ClassIDType.ResourceManager,
+                    }
+                );
             }
 
             if (classIDTypes.Contains(ClassIDType.MonoBehaviour))
@@ -41,7 +54,7 @@ namespace AssetStudio
             {
                 filteredAssetTypesList.Add(ClassIDType.Texture2D);
             }
-            
+
             filteredAssetTypesList.UnionWith(classIDTypes);
         }
 
@@ -67,8 +80,10 @@ namespace AssetStudio
         public void LoadFilesAndFolders(out string parentPath, List<string> pathList)
         {
             List<string> fileList = new List<string>();
+            List<string> regularFiles = new List<string>();
             bool filesInPath = false;
             parentPath = "";
+
             foreach (var path in pathList)
             {
                 var fullPath = Path.GetFullPath(path);
@@ -80,7 +95,9 @@ namespace AssetStudio
                         parentPath = parent;
                     }
                     MergeSplitAssets(fullPath, true);
-                    fileList.AddRange(Directory.GetFiles(fullPath, "*.*", SearchOption.AllDirectories));
+                    fileList.AddRange(
+                        Directory.GetFiles(fullPath, "*.*", SearchOption.AllDirectories)
+                    );
                 }
                 else
                 {
@@ -89,11 +106,27 @@ namespace AssetStudio
                     filesInPath = true;
                 }
             }
+
+            // Filtering out .split.bundle files and directly adding them to the regularFiles list.
+            foreach (var file in fileList)
+            {
+                if (file.EndsWith(".split.bundle"))
+                {
+                    regularFiles.Add(file);
+                }
+            }
+
+            // Removing .split.bundle files from the fileList so they don't get processed by ProcessingSplitFiles.
+            fileList.RemoveAll(f => f.EndsWith(".split.bundle"));
+
             if (filesInPath)
             {
                 MergeSplitAssets(parentPath);
             }
+
             var toReadFile = ProcessingSplitFiles(fileList);
+            toReadFile = toReadFile.Concat(regularFiles).ToArray(); // Adding the .split.bundle files back for loading
+
             fileList.Clear();
             pathList.Clear();
 
@@ -174,12 +207,19 @@ namespace AssetStudio
 
                         if (!importFilesHash.Contains(sharedFileName))
                         {
-                            var sharedFilePath = Path.Combine(Path.GetDirectoryName(reader.FullPath), sharedFileName);
+                            var sharedFilePath = Path.Combine(
+                                Path.GetDirectoryName(reader.FullPath),
+                                sharedFileName
+                            );
                             if (!noexistFiles.Contains(sharedFilePath))
                             {
                                 if (!File.Exists(sharedFilePath))
                                 {
-                                    var findFiles = Directory.GetFiles(Path.GetDirectoryName(reader.FullPath), sharedFileName, SearchOption.AllDirectories);
+                                    var findFiles = Directory.GetFiles(
+                                        Path.GetDirectoryName(reader.FullPath),
+                                        sharedFileName,
+                                        SearchOption.AllDirectories
+                                    );
                                     if (findFiles.Length > 0)
                                     {
                                         sharedFilePath = findFiles[0];
@@ -216,7 +256,11 @@ namespace AssetStudio
             }
         }
 
-        private void LoadAssetsFromMemory(FileReader reader, string originalPath, string unityVersion = null)
+        private void LoadAssetsFromMemory(
+            FileReader reader,
+            string originalPath,
+            string unityVersion = null
+        )
         {
             if (!assetsFileListHash.Contains(reader.FileName))
             {
@@ -224,7 +268,10 @@ namespace AssetStudio
                 {
                     var assetsFile = new SerializedFile(reader, this);
                     assetsFile.originalPath = originalPath;
-                    if (!string.IsNullOrEmpty(unityVersion) && assetsFile.header.m_Version < SerializedFileFormatVersion.Unknown_7)
+                    if (
+                        !string.IsNullOrEmpty(unityVersion)
+                        && assetsFile.header.m_Version < SerializedFileFormatVersion.Unknown_7
+                    )
                     {
                         assetsFile.SetVersion(unityVersion);
                     }
@@ -239,7 +286,9 @@ namespace AssetStudio
                 }
                 catch (Exception e)
                 {
-                    Logger.Warning($"Error while reading assets file {reader.FullPath} from {Path.GetFileName(originalPath)}\r\n{e}");
+                    Logger.Warning(
+                        $"Error while reading assets file {reader.FullPath} from {Path.GetFileName(originalPath)}\r\n{e}"
+                    );
                     resourceFileReaders.Add(reader.FileName, reader);
                 }
             }
@@ -255,11 +304,18 @@ namespace AssetStudio
                 var bundleFile = new BundleFile(reader, SpecifyUnityVersion);
                 foreach (var file in bundleFile.fileList)
                 {
-                    var dummyPath = Path.Combine(Path.GetDirectoryName(reader.FullPath), file.fileName);
+                    var dummyPath = Path.Combine(
+                        Path.GetDirectoryName(reader.FullPath),
+                        file.fileName
+                    );
                     var subReader = new FileReader(dummyPath, file.stream);
                     if (subReader.FileType == FileType.AssetsFile)
                     {
-                        LoadAssetsFromMemory(subReader, originalPath ?? reader.FullPath, bundleFile.m_Header.unityRevision);
+                        LoadAssetsFromMemory(
+                            subReader,
+                            originalPath ?? reader.FullPath,
+                            bundleFile.m_Header.unityRevision
+                        );
                     }
                     else if (!resourceFileReaders.ContainsKey(file.fileName))
                     {
@@ -294,7 +350,10 @@ namespace AssetStudio
                 var webFile = new WebFile(reader);
                 foreach (var file in webFile.fileList)
                 {
-                    var dummyPath = Path.Combine(Path.GetDirectoryName(reader.FullPath), file.fileName);
+                    var dummyPath = Path.Combine(
+                        Path.GetDirectoryName(reader.FullPath),
+                        file.fileName
+                    );
                     var subReader = new FileReader(dummyPath, file.stream);
                     switch (subReader.FileType)
                     {
@@ -338,7 +397,10 @@ namespace AssetStudio
                         if (entry.Name.Contains(".split"))
                         {
                             string baseName = Path.GetFileNameWithoutExtension(entry.Name);
-                            string basePath = Path.Combine(Path.GetDirectoryName(entry.FullName), baseName);
+                            string basePath = Path.Combine(
+                                Path.GetDirectoryName(entry.FullName),
+                                baseName
+                            );
                             if (!splitFiles.Contains(basePath))
                             {
                                 splitFiles.Add(basePath);
@@ -387,7 +449,11 @@ namespace AssetStudio
                     {
                         try
                         {
-                            string dummyPath = Path.Combine(Path.GetDirectoryName(reader.FullPath), reader.FileName, entry.FullName);
+                            string dummyPath = Path.Combine(
+                                Path.GetDirectoryName(reader.FullPath),
+                                reader.FileName,
+                                entry.FullName
+                            );
                             // create a new stream
                             // - to store the deflated stream in
                             // - to keep the data for later extraction
@@ -412,7 +478,9 @@ namespace AssetStudio
                         }
                         catch (Exception e)
                         {
-                            Logger.Warning($"Error while reading zip entry {entry.FullName}\r\n{e}");
+                            Logger.Warning(
+                                $"Error while reading zip entry {entry.FullName}\r\n{e}"
+                            );
                         }
                     }
                 }
@@ -431,7 +499,9 @@ namespace AssetStudio
         {
             if (assetsFile.IsVersionStripped && string.IsNullOrEmpty(SpecifyUnityVersion))
             {
-                throw new NotSupportedException("The Unity version has been stripped, please set the version in the options");
+                throw new NotSupportedException(
+                    "The Unity version has been stripped, please set the version in the options"
+                );
             }
             if (!string.IsNullOrEmpty(SpecifyUnityVersion))
             {
@@ -469,7 +539,10 @@ namespace AssetStudio
                 foreach (var objectInfo in assetsFile.m_Objects)
                 {
                     var objectReader = new ObjectReader(assetsFile.reader, assetsFile, objectInfo);
-                    if (filteredAssetTypesList.Count > 0 && !filteredAssetTypesList.Contains(objectReader.type))
+                    if (
+                        filteredAssetTypesList.Count > 0
+                        && !filteredAssetTypesList.Contains(objectReader.type)
+                    )
                     {
                         continue;
                     }
