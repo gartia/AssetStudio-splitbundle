@@ -16,7 +16,8 @@ namespace AssetStudioCLI
         public static AssetsManager assetsManager = new AssetsManager();
         public static List<AssetItem> parsedAssetsList = new List<AssetItem>();
         public static AssemblyLoader assemblyLoader = new AssemblyLoader();
-        private static Dictionary<AssetStudio.Object, string> containers = new Dictionary<AssetStudio.Object, string>();
+        private static Dictionary<AssetStudio.Object, string> containers =
+            new Dictionary<AssetStudio.Object, string>();
 
         static Studio()
         {
@@ -81,6 +82,7 @@ namespace AssetStudioCLI
                                 }
                             }
                             break;
+
                         case ResourceManager m_ResourceManager:
                             foreach (var m_Container in m_ResourceManager.m_Container)
                             {
@@ -102,7 +104,8 @@ namespace AssetStudioCLI
                             break;
                         case VideoClip m_VideoClip:
                             if (!string.IsNullOrEmpty(m_VideoClip.m_OriginalPath))
-                                assetItem.FullSize = asset.byteSize + m_VideoClip.m_ExternalResources.m_Size;
+                                assetItem.FullSize =
+                                    asset.byteSize + m_VideoClip.m_ExternalResources.m_Size;
                             assetItem.Text = m_VideoClip.m_Name;
                             break;
                         case Mesh _:
@@ -115,8 +118,14 @@ namespace AssetStudioCLI
                         case Shader m_Shader:
                             assetItem.Text = m_Shader.m_ParsedForm?.m_Name ?? m_Shader.m_Name;
                             break;
+                        case Material m_Material:
+                            assetItem.Text = m_Material.m_Name; 
+                            break;
                         case MonoBehaviour m_MonoBehaviour:
-                            if (m_MonoBehaviour.m_Name == "" && m_MonoBehaviour.m_Script.TryGet(out var m_Script))
+                            if (
+                                m_MonoBehaviour.m_Name == ""
+                                && m_MonoBehaviour.m_Script.TryGet(out var m_Script)
+                            )
                             {
                                 assetItem.Text = m_Script.m_ClassName;
                             }
@@ -153,21 +162,36 @@ namespace AssetStudioCLI
                     containers.Clear();
                 }
             }
-            var log = $"Finished loading {assetsManager.assetsFileList.Count} files with {parsedAssetsList.Count} exportable assets";
+            var log =
+                $"Finished loading {assetsManager.assetsFileList.Count} files with {parsedAssetsList.Count} exportable assets";
             var unityVer = assetsManager.assetsFileList[0].version;
             long m_ObjectsCount;
             if (unityVer[0] > 2020)
             {
-                m_ObjectsCount = assetsManager.assetsFileList.Sum(x => x.m_Objects.LongCount(y =>
-                    y.classID != (int)ClassIDType.Shader
-                    && CLIOptions.o_exportAssetTypes.Value.Any(k => (int)k == y.classID))
+                m_ObjectsCount = assetsManager.assetsFileList.Sum(
+                    x =>
+                        x.m_Objects.LongCount(
+                            y =>
+                                y.classID != (int)ClassIDType.Shader
+                                && CLIOptions.o_exportAssetTypes.Value.Any(k => (int)k == y.classID)
+                        )
                 );
             }
             else
             {
-                m_ObjectsCount = assetsManager.assetsFileList.Sum(x => x.m_Objects.LongCount(y => CLIOptions.o_exportAssetTypes.Value.Any(k => (int)k == y.classID)));
+                m_ObjectsCount = assetsManager.assetsFileList.Sum(
+                    x =>
+                        x.m_Objects.LongCount(
+                            y => CLIOptions.o_exportAssetTypes.Value.Any(k => (int)k == y.classID)
+                        )
+                );
             }
-            var objectsCount = assetsManager.assetsFileList.Sum(x => x.Objects.LongCount(y => CLIOptions.o_exportAssetTypes.Value.Any(k => k == y.type)));
+            var objectsCount = assetsManager.assetsFileList.Sum(
+                x =>
+                    x.Objects.LongCount(
+                        y => CLIOptions.o_exportAssetTypes.Value.Any(k => k == y.type)
+                    )
+            );
             if (m_ObjectsCount != objectsCount)
             {
                 log += $" and {m_ObjectsCount - objectsCount} assets failed to read";
@@ -223,48 +247,91 @@ namespace AssetStudioCLI
             var assetsCount = parsedAssetsList.Count;
             var filteredAssets = new List<AssetItem>();
 
-            switch(CLIOptions.filterBy)
+            switch (CLIOptions.filterBy)
             {
                 case FilterBy.Name:
-                    filteredAssets = parsedAssetsList.FindAll(x => CLIOptions.o_filterByName.Value.Any(y => x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0));
+                    filteredAssets = parsedAssetsList.FindAll(
+                        x =>
+                            CLIOptions.o_filterByName.Value.Any(
+                                y =>
+                                    x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase)
+                                    >= 0
+                            )
+                    );
                     Logger.Info(
-                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) " +
-                        $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByName.Value)}\"".Color(Ansi.BrightYellow)} in their Names."
+                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) "
+                            + $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByName.Value)}\"".Color(Ansi.BrightYellow)} in their Names."
                     );
                     break;
                 case FilterBy.Container:
-                    filteredAssets = parsedAssetsList.FindAll(x => CLIOptions.o_filterByContainer.Value.Any(y => x.Container.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0));
+                    filteredAssets = parsedAssetsList.FindAll(
+                        x =>
+                            CLIOptions.o_filterByContainer.Value.Any(
+                                y =>
+                                    x.Container
+                                        .ToString()
+                                        .IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0
+                            )
+                    );
                     Logger.Info(
-                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) " +
-                        $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByContainer.Value)}\"".Color(Ansi.BrightYellow)} in their Containers."
+                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) "
+                            + $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByContainer.Value)}\"".Color(Ansi.BrightYellow)} in their Containers."
                     );
                     break;
                 case FilterBy.PathID:
-                    filteredAssets = parsedAssetsList.FindAll(x => CLIOptions.o_filterByPathID.Value.Any(y => x.m_PathID.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0));
+                    filteredAssets = parsedAssetsList.FindAll(
+                        x =>
+                            CLIOptions.o_filterByPathID.Value.Any(
+                                y =>
+                                    x.m_PathID
+                                        .ToString()
+                                        .IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0
+                            )
+                    );
                     Logger.Info(
-                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) " +
-                        $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByPathID.Value)}\"".Color(Ansi.BrightYellow)} in their PathIDs."
+                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) "
+                            + $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByPathID.Value)}\"".Color(Ansi.BrightYellow)} in their PathIDs."
                     );
                     break;
                 case FilterBy.NameOrContainer:
-                    filteredAssets = parsedAssetsList.FindAll(x =>
-                        CLIOptions.o_filterByText.Value.Any(y => x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                        CLIOptions.o_filterByText.Value.Any(y => x.Container.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0)
+                    filteredAssets = parsedAssetsList.FindAll(
+                        x =>
+                            CLIOptions.o_filterByText.Value.Any(
+                                y =>
+                                    x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase)
+                                    >= 0
+                            )
+                            || CLIOptions.o_filterByText.Value.Any(
+                                y =>
+                                    x.Container
+                                        .ToString()
+                                        .IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0
+                            )
                     );
                     Logger.Info(
-                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) " +
-                        $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByText.Value)}\"".Color(Ansi.BrightYellow)} in their Names or Contaniers."
+                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) "
+                            + $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByText.Value)}\"".Color(Ansi.BrightYellow)} in their Names or Contaniers."
                     );
                     break;
                 case FilterBy.NameAndContainer:
-                    filteredAssets = parsedAssetsList.FindAll(x =>
-                        CLIOptions.o_filterByName.Value.Any(y => x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0) &&
-                        CLIOptions.o_filterByContainer.Value.Any(y => x.Container.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0)
+                    filteredAssets = parsedAssetsList.FindAll(
+                        x =>
+                            CLIOptions.o_filterByName.Value.Any(
+                                y =>
+                                    x.Text.ToString().IndexOf(y, StringComparison.OrdinalIgnoreCase)
+                                    >= 0
+                            )
+                            && CLIOptions.o_filterByContainer.Value.Any(
+                                y =>
+                                    x.Container
+                                        .ToString()
+                                        .IndexOf(y, StringComparison.OrdinalIgnoreCase) >= 0
+                            )
                     );
                     Logger.Info(
-                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) " +
-                        $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByContainer.Value)}\"".Color(Ansi.BrightYellow)} in their Containers " +
-                        $"and {$"\"{string.Join("\", \"", CLIOptions.o_filterByName.Value)}\"".Color(Ansi.BrightYellow)} in their Names."
+                        $"Found [{filteredAssets.Count}/{assetsCount}] asset(s) "
+                            + $"that contain {$"\"{string.Join("\", \"", CLIOptions.o_filterByContainer.Value)}\"".Color(Ansi.BrightYellow)} in their Containers "
+                            + $"and {$"\"{string.Join("\", \"", CLIOptions.o_filterByName.Value)}\"".Color(Ansi.BrightYellow)} in their Names."
                     );
                     break;
             }
@@ -291,10 +358,16 @@ namespace AssetStudioCLI
                     case AssetGroupOption.ContainerPathFull:
                         if (!string.IsNullOrEmpty(asset.Container))
                         {
-                            exportPath = Path.Combine(savePath, Path.GetDirectoryName(asset.Container));
+                            exportPath = Path.Combine(
+                                savePath,
+                                Path.GetDirectoryName(asset.Container)
+                            );
                             if (groupOption == AssetGroupOption.ContainerPathFull)
                             {
-                                exportPath = Path.Combine(exportPath, Path.GetFileNameWithoutExtension(asset.Container));
+                                exportPath = Path.Combine(
+                                    exportPath,
+                                    Path.GetFileNameWithoutExtension(asset.Container)
+                                );
                             }
                         }
                         else
@@ -305,11 +378,18 @@ namespace AssetStudioCLI
                     case AssetGroupOption.SourceFileName:
                         if (string.IsNullOrEmpty(asset.SourceFile.originalPath))
                         {
-                            exportPath = Path.Combine(savePath, asset.SourceFile.fileName + "_export");
+                            exportPath = Path.Combine(
+                                savePath,
+                                asset.SourceFile.fileName + "_export"
+                            );
                         }
                         else
                         {
-                            exportPath = Path.Combine(savePath, Path.GetFileName(asset.SourceFile.originalPath) + "_export", asset.SourceFile.fileName);
+                            exportPath = Path.Combine(
+                                savePath,
+                                Path.GetFileName(asset.SourceFile.originalPath) + "_export",
+                                asset.SourceFile.fileName
+                            );
                         }
                         break;
                     default:
@@ -323,21 +403,27 @@ namespace AssetStudioCLI
                     switch (CLIOptions.o_workMode.Value)
                     {
                         case WorkMode.ExportRaw:
-                            Logger.Debug($"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}");
+                            Logger.Debug(
+                                $"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}"
+                            );
                             if (ExportRawFile(asset, exportPath))
                             {
                                 exportedCount++;
                             }
                             break;
                         case WorkMode.Dump:
-                            Logger.Debug($"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}");
+                            Logger.Debug(
+                                $"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}"
+                            );
                             if (ExportDumpFile(asset, exportPath))
                             {
                                 exportedCount++;
                             }
                             break;
                         case WorkMode.Export:
-                            Logger.Debug($"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}");
+                            Logger.Debug(
+                                $"{CLIOptions.o_workMode}: {asset.Type} : {asset.Container} : {asset.Text}"
+                            );
                             if (ExportConvertFile(asset, exportPath))
                             {
                                 exportedCount++;
@@ -347,7 +433,9 @@ namespace AssetStudioCLI
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"{asset.SourceFile.originalPath}: [{$"{asset.Type}: {asset.Text}".Color(Ansi.BrightRed)}] : Export error\n{ex}");
+                    Logger.Error(
+                        $"{asset.SourceFile.originalPath}: [{$"{asset.Type}: {asset.Text}".Color(Ansi.BrightRed)}] : Export error\n{ex}"
+                    );
                 }
                 Console.Write($"Exported [{exportedCount}/{toExportCount}]\r");
             }
@@ -359,16 +447,28 @@ namespace AssetStudioCLI
             }
             else if (toExportCount > exportedCount)
             {
-                Logger.Default.Log(LoggerEvent.Info, $"Finished exporting {exportedCount} asset(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightYellow)}\".", ignoreLevel: true);
+                Logger.Default.Log(
+                    LoggerEvent.Info,
+                    $"Finished exporting {exportedCount} asset(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightYellow)}\".",
+                    ignoreLevel: true
+                );
             }
             else
             {
-                Logger.Default.Log(LoggerEvent.Info, $"Finished exporting {exportedCount} asset(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightGreen)}\".", ignoreLevel: true);
+                Logger.Default.Log(
+                    LoggerEvent.Info,
+                    $"Finished exporting {exportedCount} asset(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightGreen)}\".",
+                    ignoreLevel: true
+                );
             }
 
             if (toExportCount > exportedCount)
             {
-                Logger.Default.Log(LoggerEvent.Info, $"{toExportCount - exportedCount} asset(s) skipped (not extractable or file(s) already exist).", ignoreLevel: true);
+                Logger.Default.Log(
+                    LoggerEvent.Info,
+                    $"{toExportCount - exportedCount} asset(s) skipped (not extractable or file(s) already exist).",
+                    ignoreLevel: true
+                );
             }
         }
 
@@ -381,24 +481,31 @@ namespace AssetStudioCLI
                 case ExportListType.XML:
                     var filename = Path.Combine(savePath, "assets.xml");
                     var doc = new XDocument(
-                        new XElement("Assets",
+                        new XElement(
+                            "Assets",
                             new XAttribute("filename", filename),
                             new XAttribute("createdAt", DateTime.UtcNow.ToString("s")),
                             parsedAssetsList.Select(
-                                asset => new XElement("Asset",
-                                    new XElement("Name", asset.Text),
-                                    new XElement("Container", asset.Container),
-                                    new XElement("Type", new XAttribute("id", (int)asset.Type), asset.TypeString),
-                                    new XElement("PathID", asset.m_PathID),
-                                    new XElement("Source", asset.SourceFile.fullName),
-                                    new XElement("Size", asset.FullSize)
-                                )
+                                asset =>
+                                    new XElement(
+                                        "Asset",
+                                        new XElement("Name", asset.Text),
+                                        new XElement("Container", asset.Container),
+                                        new XElement(
+                                            "Type",
+                                            new XAttribute("id", (int)asset.Type),
+                                            asset.TypeString
+                                        ),
+                                        new XElement("PathID", asset.m_PathID),
+                                        new XElement("Source", asset.SourceFile.fullName),
+                                        new XElement("Size", asset.FullSize)
+                                    )
                             )
                         )
                     );
                     doc.Save(filename);
 
-                   break;
+                    break;
             }
             Logger.Info($"Finished exporting asset list with {parsedAssetsList.Count} items.");
         }
@@ -411,23 +518,32 @@ namespace AssetStudioCLI
             Progress.Reset();
             Logger.Info($"Searching for Live2D files...");
 
-            var cubismMocs = parsedAssetsList.Where(x =>
-            {
-                if (x.Type == ClassIDType.MonoBehaviour)
+            var cubismMocs = parsedAssetsList
+                .Where(x =>
                 {
-                    ((MonoBehaviour)x.Asset).m_Script.TryGet(out var m_Script);
-                    return m_Script?.m_ClassName == "CubismMoc";
-                }
-                return false;
-            }).Select(x => x.Asset).ToArray();
+                    if (x.Type == ClassIDType.MonoBehaviour)
+                    {
+                        ((MonoBehaviour)x.Asset).m_Script.TryGet(out var m_Script);
+                        return m_Script?.m_ClassName == "CubismMoc";
+                    }
+                    return false;
+                })
+                .Select(x => x.Asset)
+                .ToArray();
             if (cubismMocs.Length == 0)
             {
-                Logger.Default.Log(LoggerEvent.Info, "Live2D Cubism models were not found.", ignoreLevel: true);
+                Logger.Default.Log(
+                    LoggerEvent.Info,
+                    "Live2D Cubism models were not found.",
+                    ignoreLevel: true
+                );
                 return;
             }
             if (cubismMocs.Length > 1)
             {
-                var basePathSet = cubismMocs.Select(x => containers[x].Substring(0, containers[x].LastIndexOf("/"))).ToHashSet();
+                var basePathSet = cubismMocs
+                    .Select(x => containers[x].Substring(0, containers[x].LastIndexOf("/")))
+                    .ToHashSet();
 
                 if (basePathSet.Count != cubismMocs.Length)
                 {
@@ -435,11 +551,18 @@ namespace AssetStudioCLI
                     Logger.Debug($"useFullContainerPath: {useFullContainerPath}");
                 }
             }
-            var basePathList = useFullContainerPath ?
-                cubismMocs.Select(x => containers[x]).ToList() :
-                cubismMocs.Select(x => containers[x].Substring(0, containers[x].LastIndexOf("/"))).ToList();
+            var basePathList = useFullContainerPath
+                ? cubismMocs.Select(x => containers[x]).ToList()
+                : cubismMocs
+                    .Select(x => containers[x].Substring(0, containers[x].LastIndexOf("/")))
+                    .ToList();
             var lookup = containers.ToLookup(
-                x => basePathList.Find(b => x.Value.Contains(b) && x.Value.Split('/').Any(y => y == b.Substring(b.LastIndexOf("/") + 1))),
+                x =>
+                    basePathList.Find(
+                        b =>
+                            x.Value.Contains(b)
+                            && x.Value.Split('/').Any(y => y == b.Substring(b.LastIndexOf("/") + 1))
+                    ),
                 x => x.Key
             );
 
@@ -454,12 +577,19 @@ namespace AssetStudioCLI
                     continue;
                 name = container;
 
-                Logger.Info($"[{modelCounter + 1}/{totalModelCount}] Exporting Live2D: \"{container.Color(Ansi.BrightCyan)}\"");
+                Logger.Info(
+                    $"[{modelCounter + 1}/{totalModelCount}] Exporting Live2D: \"{container.Color(Ansi.BrightCyan)}\""
+                );
                 try
                 {
-                    var modelName = useFullContainerPath ? Path.GetFileNameWithoutExtension(container) : container.Substring(container.LastIndexOf('/') + 1);
-                    container = Path.HasExtension(container) ? container.Replace(Path.GetExtension(container), "") : container;
-                    var destPath = Path.Combine(baseDestPath, container) + Path.DirectorySeparatorChar;
+                    var modelName = useFullContainerPath
+                        ? Path.GetFileNameWithoutExtension(container)
+                        : container.Substring(container.LastIndexOf('/') + 1);
+                    container = Path.HasExtension(container)
+                        ? container.Replace(Path.GetExtension(container), "")
+                        : container;
+                    var destPath =
+                        Path.Combine(baseDestPath, container) + Path.DirectorySeparatorChar;
 
                     ExtractLive2D(assets, destPath, modelName, assemblyLoader);
                     modelCounter++;
@@ -470,9 +600,10 @@ namespace AssetStudioCLI
                 }
                 Progress.Report(modelCounter, (int)totalModelCount);
             }
-            var status = modelCounter > 0 ?
-                $"Finished exporting [{modelCounter}/{totalModelCount}] Live2D model(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightCyan)}\"" :
-                "Nothing exported.";
+            var status =
+                modelCounter > 0
+                    ? $"Finished exporting [{modelCounter}/{totalModelCount}] Live2D model(s) to \"{CLIOptions.o_outputFolder.Value.Color(Ansi.BrightCyan)}\""
+                    : "Nothing exported.";
             Logger.Default.Log(LoggerEvent.Info, status, ignoreLevel: true);
         }
     }

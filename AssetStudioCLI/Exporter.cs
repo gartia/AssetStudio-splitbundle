@@ -1,6 +1,7 @@
 ﻿using AssetStudio;
 using AssetStudioCLI.Options;
 using Newtonsoft.Json;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,14 @@ namespace AssetStudioCLI
             if (CLIOptions.convertTexture)
             {
                 var type = CLIOptions.o_imageFormat.Value;
-                if (!TryExportFile(exportPath, item, "." + type.ToString().ToLower(), out var exportFullPath))
+                if (
+                    !TryExportFile(
+                        exportPath,
+                        item,
+                        "." + type.ToString().ToLower(),
+                        out var exportFullPath
+                    )
+                )
                     return false;
 
                 if (CLIOptions.o_logLevel.Value <= LoggerEvent.Debug)
@@ -27,16 +35,26 @@ namespace AssetStudioCLI
                     sb.AppendLine($"Format: {m_Texture2D.m_TextureFormat}");
                     switch (m_Texture2D.m_TextureSettings.m_FilterMode)
                     {
-                        case 0: sb.AppendLine("Filter Mode: Point "); break;
-                        case 1: sb.AppendLine("Filter Mode: Bilinear "); break;
-                        case 2: sb.AppendLine("Filter Mode: Trilinear "); break;
+                        case 0:
+                            sb.AppendLine("Filter Mode: Point ");
+                            break;
+                        case 1:
+                            sb.AppendLine("Filter Mode: Bilinear ");
+                            break;
+                        case 2:
+                            sb.AppendLine("Filter Mode: Trilinear ");
+                            break;
                     }
                     sb.AppendLine($"Anisotropic level: {m_Texture2D.m_TextureSettings.m_Aniso}");
                     sb.AppendLine($"Mip map bias: {m_Texture2D.m_TextureSettings.m_MipBias}");
                     switch (m_Texture2D.m_TextureSettings.m_WrapMode)
                     {
-                        case 0: sb.AppendLine($"Wrap mode: Repeat"); break;
-                        case 1: sb.AppendLine($"Wrap mode: Clamp"); break;
+                        case 0:
+                            sb.AppendLine($"Wrap mode: Repeat");
+                            break;
+                        case 1:
+                            sb.AppendLine($"Wrap mode: Clamp");
+                            break;
                     }
                     Logger.Debug(sb.ToString());
                 }
@@ -44,7 +62,9 @@ namespace AssetStudioCLI
                 var image = m_Texture2D.ConvertToImage(flip: true);
                 if (image == null)
                 {
-                    Logger.Error($"Export error. Failed to convert texture \"{m_Texture2D.m_Name}\" into image");
+                    Logger.Error(
+                        $"Export error. Failed to convert texture \"{m_Texture2D.m_Name}\" into image"
+                    );
                     return false;
                 }
                 using (image)
@@ -53,7 +73,9 @@ namespace AssetStudioCLI
                     {
                         image.WriteToStream(file, type);
                     }
-                    Logger.Debug($"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\"");
+                    Logger.Debug(
+                        $"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\""
+                    );
                     return true;
                 }
             }
@@ -87,7 +109,11 @@ namespace AssetStudioCLI
                 {
                     var sb = new StringBuilder();
                     sb.AppendLine($"Converting \"{m_AudioClip.m_Name}\" to wav..");
-                    sb.AppendLine(m_AudioClip.version[0] < 5 ? $"AudioClip type: {m_AudioClip.m_Type}" : $"AudioClip compression format: {m_AudioClip.m_CompressionFormat}");
+                    sb.AppendLine(
+                        m_AudioClip.version[0] < 5
+                            ? $"AudioClip type: {m_AudioClip.m_Type}"
+                            : $"AudioClip compression format: {m_AudioClip.m_CompressionFormat}"
+                    );
                     sb.AppendLine($"AudioClip channel count: {m_AudioClip.m_Channels}");
                     sb.AppendLine($"AudioClip sample rate: {m_AudioClip.m_Frequency}");
                     sb.AppendLine($"AudioClip bit depth: {m_AudioClip.m_BitsPerSample}");
@@ -104,7 +130,14 @@ namespace AssetStudioCLI
             }
             else
             {
-                if (!TryExportFile(exportPath, item, converter.GetExtensionName(), out exportFullPath))
+                if (
+                    !TryExportFile(
+                        exportPath,
+                        item,
+                        converter.GetExtensionName(),
+                        out exportFullPath
+                    )
+                )
                     return false;
                 File.WriteAllBytes(exportFullPath, m_AudioData);
             }
@@ -118,7 +151,14 @@ namespace AssetStudioCLI
             var m_VideoClip = (VideoClip)item.Asset;
             if (m_VideoClip.m_ExternalResources.m_Size > 0)
             {
-                if (!TryExportFile(exportPath, item, Path.GetExtension(m_VideoClip.m_OriginalPath), out var exportFullPath))
+                if (
+                    !TryExportFile(
+                        exportPath,
+                        item,
+                        Path.GetExtension(m_VideoClip.m_OriginalPath),
+                        out var exportFullPath
+                    )
+                )
                     return false;
 
                 if (CLIOptions.o_logLevel.Value <= LoggerEvent.Debug)
@@ -161,7 +201,7 @@ namespace AssetStudioCLI
             Logger.Debug($"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\"");
             return true;
         }
-        
+
         public static bool ExportTextAsset(AssetItem item, string exportPath)
         {
             var m_TextAsset = (TextAsset)item.Asset;
@@ -189,7 +229,7 @@ namespace AssetStudioCLI
             Logger.Debug($"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\"");
             return true;
         }
-        
+
         public static bool ExportMonoBehaviour(AssetItem item, string exportPath)
         {
             if (!TryExportFile(exportPath, item, ".json", out var exportFullPath))
@@ -212,13 +252,35 @@ namespace AssetStudioCLI
             return false;
         }
 
+        public static bool ExportMaterial(AssetItem item, string exportPath)
+        {
+            if (!TryExportFile(exportPath, item, ".json", out var exportFullPath))
+                return false;
+            var m_Material = (Material)item.Asset;
+            var type = m_Material.ToType();
+            if (type != null)
+            {
+                string json = JsonConvert.SerializeObject(type, Formatting.Indented);
+                File.WriteAllText(exportFullPath, json);
+                Logger.Debug($"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\"");
+                return true;
+            }
+
+            return false;
+        }
+
         public static bool ExportFont(AssetItem item, string exportPath)
         {
             var m_Font = (Font)item.Asset;
             if (m_Font.m_FontData != null)
             {
                 var extension = ".ttf";
-                if (m_Font.m_FontData[0] == 79 && m_Font.m_FontData[1] == 84 && m_Font.m_FontData[2] == 84 && m_Font.m_FontData[3] == 79)
+                if (
+                    m_Font.m_FontData[0] == 79
+                    && m_Font.m_FontData[1] == 84
+                    && m_Font.m_FontData[2] == 84
+                    && m_Font.m_FontData[3] == 79
+                )
                 {
                     extension = ".otf";
                 }
@@ -236,7 +298,14 @@ namespace AssetStudioCLI
         {
             var type = CLIOptions.o_imageFormat.Value;
             var alphaMask = SpriteMaskMode.On;
-            if (!TryExportFile(exportPath, item, "." + type.ToString().ToLower(), out var exportFullPath))
+            if (
+                !TryExportFile(
+                    exportPath,
+                    item,
+                    "." + type.ToString().ToLower(),
+                    out var exportFullPath
+                )
+            )
                 return false;
             var image = ((Sprite)item.Asset).GetImage(alphaMask);
             if (image != null)
@@ -247,7 +316,9 @@ namespace AssetStudioCLI
                     {
                         image.WriteToStream(file, type);
                     }
-                    Logger.Debug($"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\"");
+                    Logger.Debug(
+                        $"{item.TypeString} \"{item.Text}\" exported to \"{exportFullPath}\""
+                    );
                     return true;
                 }
             }
@@ -283,7 +354,12 @@ namespace AssetStudioCLI
             return false;
         }
 
-        private static bool TryExportFile(string dir, AssetItem item, string extension, out string fullPath)
+        private static bool TryExportFile(
+            string dir,
+            AssetItem item,
+            string extension,
+            out string fullPath
+        )
         {
             var fileName = FixFileName(item.Text);
             fullPath = Path.Combine(dir, fileName + extension);
@@ -298,7 +374,9 @@ namespace AssetStudioCLI
                 Directory.CreateDirectory(dir);
                 return true;
             }
-            Logger.Error($"Export error. File \"{fullPath.Color(CLIAnsiColors.BrightRed)}\" already exist");
+            Logger.Error(
+                $"Export error. File \"{fullPath.Color(CLIAnsiColors.BrightRed)}\" already exist"
+            );
             return false;
         }
 
@@ -327,7 +405,9 @@ namespace AssetStudioCLI
 
             for (int v = 0; v < m_Mesh.m_VertexCount; v++)
             {
-                sb.Append($"v {-m_Mesh.m_Vertices[v * c]} {m_Mesh.m_Vertices[v * c + 1]} {m_Mesh.m_Vertices[v * c + 2]}\r\n");
+                sb.Append(
+                    $"v {-m_Mesh.m_Vertices[v * c]} {m_Mesh.m_Vertices[v * c + 1]} {m_Mesh.m_Vertices[v * c + 2]}\r\n"
+                );
             }
 
             #endregion
@@ -369,7 +449,12 @@ namespace AssetStudioCLI
 
                 for (int v = 0; v < m_Mesh.m_VertexCount; v++)
                 {
-                    sb.AppendFormat("vn {0} {1} {2}\r\n", -m_Mesh.m_Normals[v * c], m_Mesh.m_Normals[v * c + 1], m_Mesh.m_Normals[v * c + 2]);
+                    sb.AppendFormat(
+                        "vn {0} {1} {2}\r\n",
+                        -m_Mesh.m_Normals[v * c],
+                        m_Mesh.m_Normals[v * c + 1],
+                        m_Mesh.m_Normals[v * c + 2]
+                    );
                 }
             }
 
@@ -385,7 +470,12 @@ namespace AssetStudioCLI
                 var end = sum + indexCount / 3;
                 for (int f = sum; f < end; f++)
                 {
-                    sb.AppendFormat("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}\r\n", m_Mesh.m_Indices[f * 3 + 2] + 1, m_Mesh.m_Indices[f * 3 + 1] + 1, m_Mesh.m_Indices[f * 3] + 1);
+                    sb.AppendFormat(
+                        "f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}\r\n",
+                        m_Mesh.m_Indices[f * 3 + 2] + 1,
+                        m_Mesh.m_Indices[f * 3 + 1] + 1,
+                        m_Mesh.m_Indices[f * 3] + 1
+                    );
                 }
 
                 sum = end;
@@ -417,6 +507,8 @@ namespace AssetStudioCLI
                     return ExportTextAsset(item, exportPath);
                 case ClassIDType.MonoBehaviour:
                     return ExportMonoBehaviour(item, exportPath);
+                case ClassIDType.Material:
+                    return ExportMaterial(item, exportPath);
                 case ClassIDType.Font:
                     return ExportFont(item, exportPath);
                 case ClassIDType.Sprite:
@@ -430,8 +522,10 @@ namespace AssetStudioCLI
 
         public static string FixFileName(string str)
         {
-            if (str.Length >= 260) return Path.GetRandomFileName();
-            return Path.GetInvalidFileNameChars().Aggregate(str, (current, c) => current.Replace(c, '_'));
+            if (str.Length >= 260)
+                return Path.GetRandomFileName();
+            return Path.GetInvalidFileNameChars()
+                .Aggregate(str, (current, c) => current.Replace(c, '_'));
         }
     }
 }
