@@ -36,6 +36,7 @@ namespace AssetStudioCLI.Options
     internal enum ExportListType
     {
         None,
+        JSON,
         XML,
     }
 

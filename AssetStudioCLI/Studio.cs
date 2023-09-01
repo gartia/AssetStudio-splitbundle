@@ -1,5 +1,6 @@
 ﻿using AssetStudio;
 using AssetStudioCLI.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -119,7 +120,7 @@ namespace AssetStudioCLI
                             assetItem.Text = m_Shader.m_ParsedForm?.m_Name ?? m_Shader.m_Name;
                             break;
                         case Material m_Material:
-                            assetItem.Text = m_Material.m_Name; 
+                            assetItem.Text = m_Material.m_Name;
                             break;
                         case MonoBehaviour m_MonoBehaviour:
                             if (
@@ -504,6 +505,37 @@ namespace AssetStudioCLI
                         )
                     );
                     doc.Save(filename);
+
+                    break;
+                case ExportListType.JSON: // Assuming you've added this to the ExportListType enum
+                    var jsonFilename = Path.Combine(savePath, "assets.json");
+
+                    var assetsObject = new
+                    {
+                        filename = jsonFilename,
+                        createdAt = DateTime.UtcNow.ToString("s"),
+                        Assets = parsedAssetsList
+                            .Select(
+                                asset =>
+                                    new
+                                    {
+                                        Name = asset.Text,
+                                        Container = asset.Container,
+                                        Type = new
+                                        {
+                                            id = (int)asset.Type,
+                                            typeString = asset.TypeString
+                                        },
+                                        PathID = asset.m_PathID,
+                                        Source = asset.SourceFile.fullName,
+                                        Size = asset.FullSize
+                                    }
+                            )
+                            .ToList()
+                    };
+
+                    var jsonString = JsonConvert.SerializeObject(assetsObject, Formatting.Indented);
+                    File.WriteAllText(jsonFilename, jsonString);
 
                     break;
             }
