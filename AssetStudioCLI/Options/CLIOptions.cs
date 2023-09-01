@@ -643,6 +643,9 @@ namespace AssetStudioCLI.Options
                                 case "xml":
                                     o_exportAssetList.Value = ExportListType.XML;
                                     break;
+                                case "json":
+                                    o_exportAssetList.Value = ExportListType.JSON;
+                                    break;
                                 case "none":
                                     o_exportAssetList.Value = ExportListType.None;
                                     break;
