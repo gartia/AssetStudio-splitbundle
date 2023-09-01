@@ -35,14 +35,20 @@ jobs:
       - name: Build .Net6
         run: msbuild /t:AssetStudioGUI:publish /p:Configuration=Release /p:TargetFramework=net6.0-windows /p:SelfContained=false /verbosity:minimal
 
-      - name: Upload .Net472 Artifact
+      - name: Upload CLI .Net472 Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: AssetStudio.net472
+          name: AssetStudioCLI.net472
+          path: AssetStudioCLI/bin/Release/net472
+
+      - name: Upload GUI .Net472 Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: AssetStudioGUI.net472
           path: AssetStudioGUI/bin/Release/net472
 
-      - name: Upload .Net6 Artifact
+      - name: Upload GUI .Net6 Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: AssetStudio.net6
+          name: AssetStudioGUI.net6
           path: AssetStudioGUI/bin/Release/net6.0-windows/publish
