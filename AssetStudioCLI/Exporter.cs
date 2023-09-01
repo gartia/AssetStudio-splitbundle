@@ -254,7 +254,7 @@ namespace AssetStudioCLI
 
         public static bool ExportMaterial(AssetItem item, string exportPath)
         {
-            if (!TryExportFile(exportPath, item, ".json", out var exportFullPath))
+            if (!TryExportFile(exportPath, item, ".material.json", out var exportFullPath))
                 return false;
             var m_Material = (Material)item.Asset;
             var type = m_Material.ToType();
